@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Order Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #2563eb;
+  --blue-light: #3b82f6;
+  --blue-bg: #eff6ff;
+  --navy: #1e3a8a;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --orange: #ea580c;
+  --orange-bg: #fff7ed;
+  --yellow: #d97706;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-700: #334155;
+  --gray-900: #0f172a;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans JP',sans-serif; background:var(--gray-50); color:var(--gray-900); min-height:100vh; }
+
+/* HEADER */
+.header {
+  background:white; border-bottom:1px solid var(--gray-200);
+  padding:0 24px; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+  box-shadow: var(--shadow-sm);
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { width:32px;height:32px; background:linear-gradient(135deg,var(--blue),#60a5fa); border-radius:8px; display:flex;align-items:center;justify-content:center; font-size:16px; }
+.logo-text { font-family:'Inter',sans-serif; font-weight:800; font-size:16px; color:var(--gray-900); }
+.logo-ver { font-size:10px; color:var(--gray-400); font-weight:400; margin-left:4px; }
+.nav-tabs { display:flex; gap:2px; }
+.nav-tab {
+  padding:8px 18px; border-radius:8px; border:none; background:transparent;
+  color:var(--gray-500); font-family:'Noto Sans JP',sans-serif; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.15s; display:flex;align-items:center;gap:6px;
+}
+.nav-tab.active { background:var(--blue-bg); color:var(--blue); }
+.nav-tab:hover:not(.active) { background:var(--gray-100); color:var(--gray-700); }
+.header-right { display:flex;align-items:center;gap:12px; }
+.badge-live { background:var(--green-bg); border:1px solid #bbf7d0; color:var(--green); padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; display:flex;align-items:center;gap:5px; }
+.badge-live::before { content:''; width:6px;height:6px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+/* SLACK NOTIFICATION BELL */
+.notif-wrap { position:relative; }
+.notif-bell {
+  width:36px; height:36px; border-radius:8px; border:1px solid var(--gray-200);
+  background:white; cursor:pointer; display:flex;align-items:center;justify-content:center;
+  font-size:17px; transition:all 0.15s; position:relative;
+}
+.notif-bell:hover { background:var(--gray-100); }
+.notif-badge {
+  position:absolute; top:-4px; right:-4px;
+  background:#e01e5a; color:white; font-size:10px; font-weight:800;
+  width:16px; height:16px; border-radius:50%; display:flex;align-items:center;justify-content:center;
+  border:2px solid white;
+}
+.notif-badge.hidden { display:none; }
+.notif-drawer {
+  position:absolute; top:44px; right:0;
+  width:340px; background:white; border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.16); border:1px solid var(--gray-200);
+  z-index:999; display:none;
+  animation: fadeIn 0.15s ease;
+}
+.notif-drawer.open { display:block; }
+.notif-drawer-header {
+  padding:14px 16px 10px; border-bottom:1px solid var(--gray-100);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.notif-drawer-title { font-size:13px; font-weight:700; color:var(--gray-900); display:flex;align-items:center;gap:8px; }
+.notif-slack-badge { background:#4A154B; color:white; font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px; }
+.notif-clear { font-size:11px;color:var(--blue);cursor:pointer;font-weight:600; }
+.notif-list { max-height:320px; overflow-y:auto; }
+.notif-item {
+  padding:12px 16px; border-bottom:1px solid var(--gray-50);
+  cursor:pointer; transition:background 0.1s; display:flex;gap:10px;align-items:flex-start;
+}
+.notif-item:hover { background:var(--gray-50); }
+.notif-item.unread { background:#fff8f8; border-left:3px solid #e01e5a; }
+.notif-item.unread:hover { background:#fff0f0; }
+.notif-item-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+.notif-item-body { flex:1; }
+.notif-item-from { font-size:11px;font-weight:700;color:#4A154B;margin-bottom:3px; }
+.notif-item-msg { font-size:12px;color:var(--gray-700);line-height:1.5; }
+.notif-item-time { font-size:11px;color:var(--gray-400);margin-top:4px; }
+.notif-item-action {
+  margin-top:8px; display:inline-block;
+  background:var(--blue); color:white; font-size:11px;font-weight:700;
+  padding:4px 10px; border-radius:5px; text-decoration:none;
+}
+.notif-empty { padding:24px; text-align:center; color:var(--gray-400); font-size:13px; }
+.notif-footer { padding:10px 16px; border-top:1px solid var(--gray-100); text-align:center; }
+.notif-footer a { font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;text-decoration:none; }
+
+/* VIEWS */
+.view { display:none; animation:fadeIn 0.2s ease; }
+.view.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* ===== INTRO ===== */
+.intro-wrap { max-width:1060px; margin:0 auto; padding:32px 24px; }
+.intro-hero {
+  background:linear-gradient(135deg, var(--navy) 0%, #1e4fcf 100%);
+  border-radius:20px; padding:48px; text-align:center;
+  color:white; margin-bottom:24px; position:relative; overflow:hidden;
+}
+.intro-hero::before {
+  content:''; position:absolute; top:-80px;left:50%;transform:translateX(-50%);
+  width:500px;height:350px;
+  background:radial-gradient(ellipse,rgba(96,165,250,0.2),transparent 65%);
+}
+.intro-eyebrow { font-size:11px;font-weight:700;letter-spacing:3px;color:#93c5fd;text-transform:uppercase;margin-bottom:14px; }
+.intro-title { font-size:34px;font-weight:900;line-height:1.2;margin-bottom:16px; }
+.intro-sub { font-size:15px;color:rgba(255,255,255,0.7);line-height:1.8;max-width:580px;margin:0 auto 28px; }
+.intro-cta { background:white;color:var(--blue);border:none;padding:13px 32px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.15); }
+.intro-cta:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+.intro-cards { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+.intro-card { background:white;border:1px solid var(--gray-200);border-radius:14px;padding:24px;box-shadow:var(--shadow-sm); }
+.intro-card-icon { font-size:24px;margin-bottom:10px; }
+.intro-card-title { font-size:14px;font-weight:700;color:var(--gray-900);margin-bottom:6px; }
+.intro-card-body { font-size:13px;color:var(--gray-500);line-height:1.8; }
+.intro-kpi-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+.intro-kpi { border-radius:14px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between; }
+.intro-kpi.green { background:var(--green-bg);border:1px solid #bbf7d0; }
+.intro-kpi.blue { background:var(--blue-bg);border:1px solid #bfdbfe; }
+.intro-kpi-label { font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:4px; }
+.intro-kpi-val { font-size:26px;font-weight:900;font-family:'Inter',sans-serif;color:var(--gray-900); }
+.intro-kpi-note { font-size:10px;color:var(--gray-400);margin-top:2px; }
+.intro-kpi-icon { font-size:36px;opacity:0.25; }
+
+/* ===== SALES ===== */
+.sales-wrap { display:grid;grid-template-columns:380px 1fr;gap:24px;max-width:1200px;margin:0 auto;padding:24px; align-items:start; }
+.phone-wrap { position:sticky;top:72px; }
+.phone { background:#18181b;border-radius:48px;padding:14px;box-shadow:0 0 0 2px #27272a,0 24px 64px rgba(0,0,0,0.35);max-width:350px;margin:0 auto; }
+.phone-screen { background:var(--gray-50);border-radius:36px;height:700px;overflow:hidden;position:relative; }
+.phone-notch { position:absolute;top:0;left:50%;transform:translateX(-50%);width:90px;height:24px;background:#18181b;border-bottom-left-radius:16px;border-bottom-right-radius:16px;z-index:10; }
+.phone-content { height:100%;overflow-y:auto;padding:34px 16px 20px;background:var(--gray-50); }
+.phone-content::-webkit-scrollbar{display:none}
+.app-header { background:white;margin:-34px -16px 14px;padding:38px 16px 12px;border-bottom:1px solid var(--gray-200); }
+.app-title { font-size:18px;font-weight:800;color:var(--gray-900); }
+.app-sub { font-size:11px;color:var(--gray-400);margin-top:2px; }
+.form-group { margin-bottom:12px; }
+.form-label { font-size:10px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;display:block; }
+.form-control { width:100%;background:white;border:1.5px solid var(--gray-200);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--gray-900);font-family:'Noto Sans JP',sans-serif;transition:border-color 0.15s;appearance:none; }
+.form-control:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+.isbn-row { display:flex;gap:6px; }
+.isbn-row .form-control { flex:1; }
+.cam-btn { background:var(--blue);color:white;border:none;border-radius:9px;padding:0 12px;font-size:16px;cursor:pointer;transition:all 0.15s;flex-shrink:0; }
+.cam-btn:hover { background:var(--blue-light); }
+.book-preview { background:white;border:1px solid var(--gray-200);border-radius:9px;padding:10px 12px;display:flex;gap:10px;align-items:center;margin-top:6px; }
+.book-thumb { width:36px;height:48px;background:linear-gradient(135deg,var(--blue-bg),#bfdbfe);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
+.book-info-title { font-size:12px;font-weight:700;color:var(--gray-900); }
+.book-info-series { font-size:10px;color:var(--gray-400);margin-top:2px; }
+.stamp-grid { display:grid;grid-template-columns:1fr 1fr;gap:5px; }
+.stamp-btn { padding:9px 6px;border:1.5px solid var(--gray-200);border-radius:8px;background:white;font-size:11px;font-weight:600;color:var(--gray-500);cursor:pointer;transition:all 0.15s;font-family:'Noto Sans JP',sans-serif; }
+.stamp-btn.active { background:var(--blue-bg);border-color:var(--blue);color:var(--blue); }
+.delivery-opts { display:grid;grid-template-columns:1fr 1fr;gap:6px; }
+.delivery-opt { background:white;border:1.5px solid var(--gray-200);border-radius:8px;padding:8px 10px;cursor:pointer;transition:all 0.15s; }
+.delivery-opt.active { background:var(--blue-bg);border-color:var(--blue); }
+.delivery-opt-label { font-size:10px;font-weight:700;color:var(--gray-500);margin-bottom:3px; }
+.delivery-opt.active .delivery-opt-label { color:var(--blue); }
+.delivery-opt-val { font-size:12px;font-weight:700;color:var(--gray-700); }
+.qty-box { background:white;border:1.5px solid var(--gray-200);border-radius:9px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between; }
+.qty-label { font-size:11px;font-weight:700;color:var(--gray-500); }
+.qty-input { width:60px;text-align:center;font-size:22px;font-weight:800;color:var(--gray-900);border:none;background:transparent;font-family:'Inter',sans-serif; }
+.qty-input:focus{outline:none}
+.alert-box { background:var(--red-bg);border-left:3px solid var(--red);border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;color:var(--red);margin-bottom:10px; }
+.btn-primary { width:100%;background:linear-gradient(135deg,var(--blue),var(--blue-light));color:white;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;box-shadow:0 3px 12px rgba(37,99,235,0.3); }
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,0.4);}
+.btn-danger { width:100%;background:linear-gradient(135deg,var(--red),#ef4444);color:white;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:6px;box-shadow:0 3px 12px rgba(220,38,38,0.25); }
+.btn-hidden{display:none}
+
+/* Sales right panel */
+.sales-right { display:flex;flex-direction:column;gap:20px; }
+.panel-card { background:white;border:1px solid var(--gray-200);border-radius:14px;padding:20px;box-shadow:var(--shadow-sm); }
+.panel-title { font-size:11px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px; }
+.flow-steps { display:flex;align-items:center;gap:6px; }
+.flow-step { flex:1;background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:10px;padding:12px 8px;text-align:center;transition:all 0.3s; }
+.flow-step.highlight { background:var(--blue-bg);border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+.flow-step.success-step { background:var(--green-bg);border-color:#86efac; }
+.flow-step.alert-step { background:var(--red-bg);border-color:#fca5a5; }
+.flow-step-icon{font-size:18px;margin-bottom:5px;}
+.flow-step-label{font-size:10px;font-weight:700;color:var(--gray-600);}
+.flow-step-sub{font-size:9px;color:var(--gray-400);margin-top:2px;}
+.flow-arrow{font-size:12px;color:var(--gray-300);flex-shrink:0;}
+.step-indicator { background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:0; }
+.step-dot{width:7px;height:7px;border-radius:50%;background:var(--gray-200);flex-shrink:0;}
+.step-dot.active{background:var(--blue);}
+.step-dot.done{background:var(--green);}
+.step-text{font-size:12px;color:var(--gray-500);}
+.step-text strong{color:var(--gray-900);}
+.tip-box { background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:10px;padding:14px;font-size:13px;color:var(--gray-700);line-height:1.8; }
+
+/* ===== MARKETING ===== */
+.mkt-wrap { padding:20px 24px;max-width:1300px;margin:0 auto; }
+.kpi-bar { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px; }
+.kpi-mini { border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between; }
+.kpi-mini.green{background:var(--green-bg);border:1px solid #bbf7d0;}
+.kpi-mini.blue{background:var(--blue-bg);border:1px solid #bfdbfe;}
+.kpi-mini-label{font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:3px;}
+.kpi-mini-value{font-size:22px;font-weight:900;font-family:'Inter',sans-serif;color:var(--gray-900);}
+.kpi-mini-icon{font-size:28px;opacity:0.2;}
+.mkt-grid { display:grid;grid-template-columns:280px 1fr;gap:16px; }
+.alerts-panel { background:white;border:1px solid var(--gray-200);border-radius:14px;box-shadow:var(--shadow-sm);overflow:hidden; }
+.alerts-header { padding:14px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:8px; }
+.alerts-header-title{font-size:13px;font-weight:700;color:var(--gray-900);}
+.alert-count { background:var(--red);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto; }
+.alert-list { padding:8px;max-height:calc(100vh - 280px);overflow-y:auto; }
+.alert-list::-webkit-scrollbar{display:none}
+.alert-section-label { font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;padding:6px 8px 4px; }
+.alert-item { border-radius:9px;padding:11px 12px;margin-bottom:5px;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s; }
+.alert-item.stock { background:var(--red-bg);border-color:#fecaca; }
+.alert-item.stock:hover,.alert-item.stock.sel { background:#fee2e2;border-color:#f87171; }
+.alert-item.reprint { background:var(--orange-bg);border-color:#fed7aa; }
+.alert-item.reprint:hover,.alert-item.reprint.sel { background:#ffedd5;border-color:#fb923c; }
+.alert-item.sel { box-shadow:0 0 0 2px rgba(37,99,235,0.2); }
+.alert-badge { font-size:9px;font-weight:700;margin-bottom:4px; }
+.alert-badge.s{color:var(--red)}.alert-badge.r{color:var(--orange)}
+.alert-isbn{font-size:13px;font-weight:700;color:var(--gray-900);margin-bottom:2px;}
+.alert-store{font-size:11px;color:var(--gray-400);}
+.alert-tag { display:inline-block;background:white;border:1px solid var(--gray-200);border-radius:5px;padding:1px 7px;font-size:10px;color:var(--gray-500);margin-top:5px; }
+.detail-panel { background:white;border:1px solid var(--gray-200);border-radius:14px;padding:22px;box-shadow:var(--shadow-sm);min-height:500px;display:flex;flex-direction:column; }
+.detail-header { display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:1px solid var(--gray-100);margin-bottom:18px; }
+.detail-title{font-size:20px;font-weight:800;color:var(--gray-900);}
+.detail-sub{font-size:12px;color:var(--gray-400);margin-top:3px;}
+.qty-badge { background:var(--red-bg);border:1px solid #fecaca;color:var(--red);padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700; }
+.qty-badge.orange{background:var(--orange-bg);border-color:#fed7aa;color:var(--orange);}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.ai-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:14px;}
+.ai-box.blue{background:var(--blue-bg);border-color:#bfdbfe;}
+.ai-box.orange{background:var(--orange-bg);border-color:#fed7aa;}
+.ai-box-title{font-size:11px;font-weight:700;color:var(--gray-600);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.ai-chip{background:white;border:1px solid var(--gray-200);color:var(--blue);font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;}
+.ai-chip.orange{color:var(--orange);}
+.ai-stat{font-size:11px;color:var(--gray-400);margin-bottom:3px;}
+.ai-stat-val{font-size:13px;font-weight:700;color:var(--gray-900);}
+.ai-recommend{background:white;border:1px solid var(--gray-200);border-radius:7px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.ai-recommend-label{font-size:11px;font-weight:600;color:var(--gray-500);}
+.ai-recommend-val{font-size:18px;font-weight:900;color:var(--blue);font-family:'Inter',sans-serif;}
+.ai-recommend-val.orange{color:var(--orange);}
+.context-box{background:var(--orange-bg);border:1px solid #fed7aa;border-radius:10px;padding:14px;margin-bottom:16px;}
+.context-title{font-size:11px;font-weight:700;color:var(--orange);margin-bottom:8px;}
+.stamp-display{display:inline-block;background:white;border:1px solid #fed7aa;color:var(--orange);padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700;margin-bottom:6px;}
+.context-comment{background:white;border-radius:7px;padding:9px 12px;font-size:12px;color:var(--gray-700);border:1px solid var(--gray-200);}
+.approve-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--blue-light));color:white;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;box-shadow:0 3px 12px rgba(37,99,235,0.25);}
+.approve-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.35);}
+.approve-btn.orange-btn{background:linear-gradient(135deg,var(--orange),#f97316);box-shadow:0 3px 12px rgba(234,88,12,0.25);}
+.approve-btn.orange-btn:hover{box-shadow:0 6px 20px rgba(234,88,12,0.35);}
+
+/* PubteX */
+.pubtex-bar{background:var(--orange-bg);border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.pubtex-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.pubtex-label{font-size:11px;font-weight:700;color:var(--orange);display:flex;align-items:center;gap:6px;}
+.pubtex-api-badge{background:white;border:1px solid #fed7aa;color:var(--orange);font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;}
+.pubtex-score-value{font-size:24px;font-weight:900;font-family:'Inter',sans-serif;color:var(--orange);}
+.pubtex-track{height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden;}
+.pubtex-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--orange),#f97316);transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1);}
+.pubtex-note{font-size:10px;color:var(--gray-400);margin-top:5px;}
+.trend-chart{display:flex;align-items:flex-end;gap:3px;height:44px;margin-top:8px;}
+.trend-bar{flex:1;border-radius:3px 3px 0 0;background:#bfdbfe;transition:height 0.5s ease;}
+.trend-bar.hi{background:var(--blue);}
+.trend-label{display:flex;gap:3px;margin-top:3px;}
+.trend-label span{flex:1;text-align:center;font-size:8px;color:var(--gray-400);}
+.reprint-recommend{background:var(--orange-bg);border:1px solid #fed7aa;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.rr-label{font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:3px;}
+.rr-val{font-size:24px;font-weight:900;font-family:'Inter',sans-serif;color:var(--orange);}
+.rr-sub{font-size:10px;color:var(--gray-400);margin-top:2px;}
+.drilldown-row{display:flex;gap:8px;margin-bottom:14px;}
+.drilldown-btn{flex:1;background:white;border:1px solid var(--gray-200);border-radius:8px;padding:9px 12px;font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;transition:all 0.15s;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;}
+.drilldown-btn:hover{background:var(--blue-bg);border-color:#bfdbfe;}
+.drilldown-btn.orange{color:var(--orange);}
+.drilldown-btn.orange:hover{background:var(--orange-bg);border-color:#fed7aa;}
+.empty-detail{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray-300);font-size:13px;}
+
+/* ===== KPS ===== */
+.kps-wrap{padding:16px 24px;max-width:1300px;margin:0 auto;}
+.kps-workspace{display:grid;grid-template-columns:280px 1fr 200px;gap:14px;height:calc(100vh - 100px);}
+.kps-list-pane{background:white;border:1px solid var(--gray-200);border-radius:14px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;overflow:hidden;}
+.kps-search{padding:10px;border-bottom:1px solid var(--gray-100);}
+.kps-search input{width:100%;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:7px;padding:7px 11px;font-size:12px;color:var(--gray-900);font-family:'Noto Sans JP',sans-serif;}
+.kps-search input::placeholder{color:var(--gray-400);}
+.kps-search input:focus{outline:none;border-color:var(--blue);}
+.kps-tabs{display:flex;border-bottom:1px solid var(--gray-100);}
+.kps-tab{flex:1;padding:9px 6px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--gray-400);border-bottom:2px solid transparent;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.kps-tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.kps-tab-count{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
+.kps-tab.active .kps-tab-count{background:var(--blue);color:white;}
+.kps-tab:not(.active) .kps-tab-count{background:var(--gray-100);color:var(--gray-400);}
+.kps-task-list{flex:1;overflow-y:auto;padding:6px;}
+.kps-task-list::-webkit-scrollbar{display:none}
+.kps-task-item{padding:11px 12px;border-radius:9px;margin-bottom:4px;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s;background:var(--gray-50);}
+.kps-task-item:hover{background:var(--gray-100);}
+.kps-task-item.active{background:var(--blue-bg);border-color:#bfdbfe;}
+.kps-task-item.done-item{opacity:0.45;}
+.kps-task-urgency{font-size:9px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
+.urg-red{color:var(--red)}.urg-orange{color:var(--orange)}.urg-green{color:var(--green)}.urg-done{color:var(--gray-400)}
+.kps-task-title{font-size:12px;font-weight:700;color:var(--gray-900);margin-bottom:2px;line-height:1.3;}
+.kps-task-sub{font-size:10px;color:var(--gray-400);}
+.kps-detail-pane{background:white;border:1px solid var(--gray-200);border-radius:14px;padding:20px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;overflow-y:auto;}
+.kps-detail-pane::-webkit-scrollbar{display:none}
+.kps-detail-isbn{font-size:10px;color:var(--gray-400);margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.kps-detail-title{font-size:20px;font-weight:800;color:var(--gray-900);margin-bottom:16px;line-height:1.3;}
+.kps-meta-grid{display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--gray-200);border-radius:9px;overflow:hidden;margin-bottom:16px;}
+.kps-meta-label{padding:9px 13px;font-size:11px;font-weight:700;color:var(--gray-500);background:var(--gray-50);border-bottom:1px solid var(--gray-100);white-space:nowrap;}
+.kps-meta-value{padding:9px 13px;font-size:12px;font-weight:600;color:var(--gray-900);border-bottom:1px solid var(--gray-100);}
+.kps-meta-label:last-of-type,.kps-meta-value:last-of-type{border-bottom:none;}
+.kps-instruction-box{background:var(--blue-bg);border:1px solid #bfdbfe;border-left:3px solid var(--blue);border-radius:8px;padding:12px 14px;margin-bottom:16px;}
+.kps-instruction-title{font-size:10px;font-weight:700;color:var(--blue);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.kps-instruction-body{font-size:12px;color:var(--gray-700);line-height:1.7;}
+.kps-instruction-body strong{color:var(--red);}
+.kps-instruction-note{font-size:10px;color:var(--gray-400);margin-top:5px;}
+.kps-action-area{margin-top:auto;display:flex;flex-direction:column;gap:7px;}
+.kps-btn-primary{width:100%;background:linear-gradient(135deg,var(--gray-900),var(--gray-700));color:white;border:none;border-radius:10px;padding:14px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;box-shadow:0 3px 10px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;gap:7px;}
+.kps-btn-primary:hover{background:black;box-shadow:0 5px 16px rgba(0,0,0,0.3);}
+.kps-btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.kps-btn-row{display:flex;gap:7px;}
+.kps-btn-secondary{flex:1;background:white;border:1px solid var(--gray-200);color:var(--gray-600);border-radius:8px;padding:10px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;}
+.kps-btn-secondary:hover{background:var(--gray-50);border-color:var(--gray-300);color:var(--gray-900);}
+.kps-sidebar{display:flex;flex-direction:column;gap:12px;}
+.kps-sidebar-card{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:14px;box-shadow:var(--shadow-sm);}
+.kps-sidebar-title{font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.kps-db-badge{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--green);background:var(--green-bg);border:1px solid #bbf7d0;border-radius:7px;padding:7px 11px;}
+.kps-db-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+.kps-progress-label{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--gray-700);margin-bottom:6px;}
+.kps-progress-track{height:7px;background:var(--gray-100);border-radius:4px;overflow:hidden;margin-bottom:4px;}
+.kps-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),#4ade80);transition:width 0.5s ease;}
+.kps-progress-sub{font-size:10px;color:var(--gray-400);}
+.kps-log-list{display:flex;flex-direction:column;gap:10px;}
+.kps-log-item{display:flex;gap:8px;}
+.kps-log-dot{width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:4px;flex-shrink:0;}
+.kps-log-dot.orange{background:var(--orange);}
+.kps-log-dot.blue{background:var(--blue);}
+.kps-log-book{font-size:11px;font-weight:700;color:var(--gray-900);}
+.kps-log-who{font-size:10px;color:var(--gray-500);margin-top:1px;}
+.kps-log-time{font-size:9px;color:var(--gray-300);margin-top:1px;}
+.kps-log-note{font-size:10px;color:var(--gray-300);margin-top:1px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--gray-900);color:white;border-radius:12px;padding:14px 18px;width:300px;box-shadow:var(--shadow-lg);display:flex;gap:10px;z-index:1000;transform:translateX(120%);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+.toast.show{transform:translateX(0);}
+.toast-icon{width:32px;height:32px;background:#611f69;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.toast-from{font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:3px;}
+.toast-msg{font-size:12px;color:rgba(255,255,255,0.85);line-height:1.5;}
+.toast-link{display:block;font-size:10px;color:#93c5fd;margin-top:6px;cursor:pointer;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{background:white;border-radius:20px;padding:36px;max-width:420px;width:90%;text-align:center;transform:scale(0.9);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:var(--shadow-lg);}
+.modal-overlay.show .modal{transform:scale(1);}
+.modal-icon{font-size:48px;margin-bottom:12px;}
+.modal-title{font-size:20px;font-weight:800;color:var(--gray-900);margin-bottom:7px;}
+.modal-tag{display:inline-block;background:var(--green-bg);border:1px solid #bbf7d0;color:var(--green);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:14px;}
+.modal-body{font-size:13px;color:var(--gray-500);line-height:1.8;margin-bottom:20px;}
+.modal-close{background:var(--gray-900);color:white;border:none;border-radius:9px;padding:11px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+
+/* drilldown modal */
+.drill-modal{background:white;border-radius:16px;padding:28px;max-width:520px;width:90%;transform:scale(0.9);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:var(--shadow-lg);}
+.modal-overlay.show .drill-modal{transform:scale(1);}
+.drill-title{font-size:16px;font-weight:800;color:var(--gray-900);margin-bottom:4px;}
+.drill-sub{font-size:12px;color:var(--gray-400);margin-bottom:18px;}
+.drill-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--gray-100);font-size:13px;}
+.drill-row:last-child{border-bottom:none;}
+.drill-key{color:var(--gray-500);font-weight:600;}
+.drill-val{color:var(--gray-900);font-weight:700;}
+.drill-close{margin-top:18px;width:100%;background:var(--gray-100);color:var(--gray-700);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+
+/* 出荷確定通知 */
+.shipment-notify {
+  background: var(--green-bg);
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  animation: notifyIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+@keyframes notifyIn { from{opacity:0;transform:translateY(8px) scale(0.97)} to{opacity:1;transform:none} }
+.shipment-notify-header { display:flex;align-items:center;gap:7px;margin-bottom:8px; }
+.shipment-notify-badge { background:var(--green);color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px; }
+.shipment-notify-title { font-size:12px;font-weight:800;color:var(--green);flex:1; }
+.shipment-notify-close { background:none;border:none;font-size:14px;color:var(--gray-400);cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0; }
+.shipment-notify-close:hover { color:var(--gray-700); }
+.shipment-notify-row { display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #bbf7d0; }
+.shipment-notify-row:last-child { border-bottom:none; }
+.shipment-notify-key { font-size:11px;color:var(--gray-500);font-weight:600; }
+.shipment-notify-val { font-size:12px;font-weight:800;color:var(--gray-900); }
+.shipment-notify-val.highlight { color:var(--green);font-size:14px; }
+.shipment-notify-mail-btn {
+  width:100%; margin-top:10px;
+  background:white; border:1.5px solid #86efac;
+  color:var(--green); border-radius:8px; padding:8px;
+  font-size:11px; font-weight:700; cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  transition:all 0.15s;
+}
+.shipment-notify-mail-btn:hover { background:var(--green-bg); border-color:var(--green); }
+.shipment-notify-mail-btn.sent { background:#dcfce7; color:#15803d; cursor:default; }
+
+/* 複数書目リスト */
+.order-history {
+  background:white; border:1px solid var(--gray-200);
+  border-radius:10px; padding:12px; margin-bottom:10px;
+}
+.order-history-title {
+  font-size:10px; font-weight:700; color:var(--gray-400);
+  text-transform:uppercase; letter-spacing:0.5px;
+  margin-bottom:8px; display:flex; align-items:center; gap:6px;
+}
+.order-history-badge {
+  background:var(--blue); color:white;
+  font-size:9px; font-weight:700;
+  padding:1px 6px; border-radius:10px;
+}
+.order-history-item {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 0; border-bottom:1px solid var(--gray-100);
+  font-size:11px;
+}
+.order-history-item:last-child { border-bottom:none; }
+.order-history-status {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:4px;
+}
+.order-history-status.done { background:var(--green); box-shadow:0 0 0 3px #dcfce7; }
+.order-history-status.pending { background:var(--blue); }
+.order-history-status.shipped { background:var(--green); box-shadow:0 0 0 3px #dcfce7; }
+.order-history-book { flex:1; font-weight:700; color:var(--gray-900); line-height:1.3; }
+.order-history-qty { color:var(--gray-400); font-weight:600; }
+.order-history-tag { font-size:10px; font-weight:700; padding:2px 8px; border-radius:5px; white-space:nowrap; }
+.order-history-tag.auto { background:#dcfce7; color:var(--green); border:1px solid #bbf7d0; }
+.order-history-tag.shipped { background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; }
+.order-history-tag.pending { background:var(--blue-bg); color:var(--blue); border:1px solid #bfdbfe; }
+
+@keyframes bellShake {
+  0%,100%{transform:rotate(0)} 20%{transform:rotate(-15deg)} 40%{transform:rotate(15deg)} 60%{transform:rotate(-10deg)} 80%{transform:rotate(10deg)}
+}
+
+.empty-state{text-align:center;padding:36px 20px;color:var(--gray-400);font-size:13px;background:var(--gray-50);border:1px dashed var(--gray-200);border-radius:10px;}
+.empty-icon{font-size:28px;margin-bottom:10px;opacity:0.4;}
+.all-done-banner{background:var(--green-bg);border:1px solid #bbf7d0;border-radius:10px;padding:13px 20px;text-align:center;color:var(--green);font-weight:700;font-size:13px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📚</div>
+    <div>
+      <span class="logo-text">K-Order Platform</span>
+      <span class="logo-ver">Ver.6.0 (Req. Compliant)</span>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('intro')" id="tab-intro">🏠 概要</button>
+    <button class="nav-tab" onclick="showView('sales')" id="tab-sales">📱 営業 (Input)</button>
+    <button class="nav-tab" onclick="showView('marketing')" id="tab-marketing">🌍 マーケ判断</button>
+    <button class="nav-tab" onclick="showView('kps')" id="tab-kps">📋 KPS実務</button>
+  </div>
+  <div class="header-right">
+    <!-- Slack風通知ベル -->
+    <div class="notif-wrap" id="notif-wrap">
+      <button class="notif-bell" onclick="toggleNotifDrawer()" title="通知">
+        🔔
+        <span class="notif-badge hidden" id="notif-badge">0</span>
+      </button>
+      <div class="notif-drawer" id="notif-drawer">
+        <div class="notif-drawer-header">
+          <div class="notif-drawer-title">
+            <span class="notif-slack-badge">Slack</span>
+            K-Order 通知
+          </div>
+          <span class="notif-clear" onclick="clearAllNotifs()">すべて既読</span>
+        </div>
+        <div class="notif-list" id="notif-list">
+          <div class="notif-empty">🔕 通知はありません</div>
+        </div>
+        <div class="notif-footer">
+          <a onclick="toggleNotifDrawer()">閉じる</a>
+        </div>
+      </div>
+    </div>
+    <div class="badge-live">DEMO LIVE</div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div id="view-intro" class="view active">
+  <div class="intro-wrap">
+    <div class="intro-hero">
+      <div class="intro-eyebrow">K-Order Platform — Executive Demo</div>
+      <h1 class="intro-title">優秀な才能を、雑務から解放する</h1>
+      <p class="intro-sub">営業の「なぜ出荷したか」という文脈データを蓄積し、定型処理は自動化（守り）、在庫不足は戦略判断へ昇華（攻め）。出版社・物流・書店がワンチームとなる次世代BPOプラットフォームです。</p>
+      <button class="intro-cta" onclick="showView('sales')">デモを開始する →</button>
+    </div>
+    <div class="intro-cards">
+      <div class="intro-card">
+        <div class="intro-card-icon">⏱️</div>
+        <div class="intro-card-title">守り：自動処理で時間を創出</div>
+        <div class="intro-card-body">マスタルール合致の定型注文はシステムが瞬時に自動承認。年間<strong>360時間分</strong>の戦略リソースを生み出します。</div>
+      </div>
+      <div class="intro-card">
+        <div class="intro-card-icon">📈</div>
+        <div class="intro-card-title">攻め：機会損失を戦略チャンスへ</div>
+        <div class="intro-card-body">「在庫切れで断念」という埋もれた機会損失をAIが検知・可視化。年間<strong>粗利3,000万円超</strong>の改善を目指します。</div>
+      </div>
+    </div>
+    <div class="intro-kpi-row">
+      <div class="intro-kpi green">
+        <div>
+          <div class="intro-kpi-label">【守り】年間創出時間（Phase1目標）</div>
+          <div class="intro-kpi-val">360 h</div>
+          <div class="intro-kpi-note">ストレート通過率80%達成時の試算</div>
+        </div>
+        <div class="intro-kpi-icon">⏱️</div>
+      </div>
+      <div class="intro-kpi blue">
+        <div>
+          <div class="intro-kpi-label">【攻め】機会損失回避 粗利UP（目標）</div>
+          <div class="intro-kpi-val">¥30,000,000</div>
+          <div class="intro-kpi-note">売上率3%改善、単価1,500円で試算</div>
+        </div>
+        <div class="intro-kpi-icon">📈</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SALES -->
+<div id="view-sales" class="view">
+  <div class="sales-wrap">
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="phone-content">
+            <div class="app-header">
+              <div class="app-title">新規注文作成</div>
+              <div class="app-sub">K-Order 営業アプリ</div>
+            </div>
+
+            <!-- 本日の注文リスト（複数書目） -->
+            <div id="order-history-area"></div>
+
+            <div class="form-group">
+              <label class="form-label">納品先書店</label>
+              <select class="form-control" id="store-input">
+                <option value="紀伊國屋書店 新宿本店">紀伊國屋書店 新宿本店</option>
+                <option value="ジュンク堂書店 池袋本店">ジュンク堂書店 池袋本店</option>
+                <option value="丸善 丸の内本店">丸善 丸の内本店</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">ISBN / 書名 <span style="color:var(--red);font-size:9px">（「B」→在庫不足デモ）</span></label>
+              <div class="isbn-row">
+                <input type="text" class="form-control" id="isbn-input" placeholder="例: 9784065358542" value="9784065358542" onblur="lookupISBN()">
+                <button class="cam-btn" onclick="cameraDemo()" title="カメラで読込">📷</button>
+              </div>
+              <div class="book-preview" id="book-preview">
+                <div class="book-thumb">📖</div>
+                <div>
+                  <div class="book-info-title" id="book-title">方舟</div>
+                  <div class="book-info-series" id="book-series">講談社文庫</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">文脈スタンプ (WHY?)</label>
+              <div class="stamp-grid">
+                <button class="stamp-btn" data-value="通常補充" onclick="selectStamp(this)">通常補充</button>
+                <button class="stamp-btn" data-value="著者イベント" onclick="selectStamp(this)">★ 著者イベント</button>
+                <button class="stamp-btn" data-value="SNSで話題！" onclick="selectStamp(this)">📱 SNSで話題！</button>
+                <button class="stamp-btn" data-value="店舗激賞" onclick="selectStamp(this)">🔥 店舗激賞</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">納品オプション</label>
+              <div class="delivery-opts">
+                <div class="delivery-opt active" id="opt-normal" onclick="selectDelivery('normal')">
+                  <div class="delivery-opt-label">通常納品</div>
+                  <div class="delivery-opt-val">翌営業日</div>
+                </div>
+                <div class="delivery-opt" id="opt-direct" onclick="selectDelivery('direct')">
+                  <div class="delivery-opt-label">直送希望</div>
+                  <div class="delivery-opt-val">書店直送</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" id="delivery-date-group" style="display:none">
+              <label class="form-label">搬入希望日</label>
+              <input type="date" class="form-control" id="delivery-date">
+            </div>
+
+            <div class="form-group">
+              <textarea class="form-control" id="comment-input" placeholder="コメント（任意）" style="height:52px;resize:none;font-size:12px;"></textarea>
+            </div>
+
+            <div class="form-group">
+              <div class="qty-box">
+                <span class="qty-label">希望数</span>
+                <input type="number" class="qty-input" id="qty-input" value="50">
+                <span style="font-size:12px;color:var(--gray-500);font-weight:700;">冊</span>
+              </div>
+            </div>
+
+            <div id="alert-area" class="alert-box" style="display:none;">🚨 在庫が不足しています（現在庫：0）</div>
+
+            <button class="btn-primary" id="submit-btn" onclick="checkStock()">注文を確定する 🚀</button>
+            <button class="btn-danger btn-hidden" id="loss-log-btn" onclick="sendLossLog()">断念ログとして記録 📉</button>
+
+            <!-- 出荷確定通知エリア -->
+            <div id="shipment-notify-area"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sales-right">
+      <div class="step-indicator">
+        <div class="step-dot active" id="step1"></div>
+        <div class="step-dot" id="step2"></div>
+        <div class="step-dot" id="step3"></div>
+        <div class="step-text" id="step-label"><strong>Step 1</strong>：営業スタッフがスマホで注文を入力します</div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title">処理フロー</div>
+        <div class="flow-steps">
+          <div class="flow-step highlight" id="flow-input"><div class="flow-step-icon">📱</div><div class="flow-step-label">営業入力</div><div class="flow-step-sub">スマホで注文</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step" id="flow-check"><div class="flow-step-icon">⚙️</div><div class="flow-step-label">在庫チェック</div><div class="flow-step-sub">自動判定</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step" id="flow-auto"><div class="flow-step-icon">⚡</div><div class="flow-step-label">自動承認</div><div class="flow-step-sub">KPSへ即送信</div></div>
+          <div class="flow-arrow" style="color:var(--gray-200);">／</div>
+          <div class="flow-step" id="flow-alert"><div class="flow-step-icon">🚨</div><div class="flow-step-label">アラート</div><div class="flow-step-sub">マーケへ通知</div></div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title">デモのポイント</div>
+        <div class="tip-box">
+          <p>🎯 <strong>文脈スタンプ（WHY?）</strong>が今回の目玉機能です。</p><br>
+          <p>従来の発注システムでは「なぜ出荷したか」という背景情報が消えていました。K-Orderでは <strong>「著者イベント」「SNSで話題！」</strong> などのスタンプを押すだけで現場の熱量が自動蓄積されます。</p><br>
+          <p>📷 <strong>カメラボタン</strong>で書影から書籍を読込。<strong>直送希望</strong>時は搬入希望日も指定可能です。</p><br>
+          <p style="background:white;border:1px solid #bfdbfe;border-radius:7px;padding:10px;">💡 <strong>デモ手順：</strong>ISBNに「<strong>B</strong>」と入力して確定 → 在庫不足シナリオが発動します</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MARKETING -->
+<div id="view-marketing" class="view">
+  <div class="mkt-wrap">
+    <div class="kpi-bar">
+      <div class="kpi-mini green">
+        <div><div class="kpi-mini-label">【守り】自動化による創出時間（デモ累計）</div><div class="kpi-mini-value"><span id="kpi-time">0</span> 分</div></div>
+        <div class="kpi-mini-icon">⏱️</div>
+      </div>
+      <div class="kpi-mini blue">
+        <div><div class="kpi-mini-label">【攻め】機会損失回避 粗利UP（デモ累計）</div><div class="kpi-mini-value">¥<span id="kpi-revenue">0</span></div></div>
+        <div class="kpi-mini-icon">📈</div>
+      </div>
+    </div>
+    <div class="mkt-grid">
+      <div class="alerts-panel">
+        <div class="alerts-header">
+          <div class="alerts-header-title">要判断リスト</div>
+          <span class="alert-count" id="alert-count">0</span>
+        </div>
+        <div class="alert-list" id="marketing-list">
+          <div class="empty-state" style="margin:12px"><div class="empty-icon">🔔</div>現在アラートはありません</div>
+        </div>
+      </div>
+      <div class="detail-panel" id="detail-panel">
+        <div class="empty-detail"><div style="font-size:28px;margin-bottom:10px;opacity:0.3;">←</div>左のリストから選択してください</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPS -->
+<div id="view-kps" class="view">
+  <div class="kps-wrap">
+    <div class="kps-workspace">
+      <div class="kps-list-pane">
+        <div class="kps-search"><input type="text" placeholder="🔍 ISBN, 書店, 担当者..." id="kps-search-input" oninput="renderKPS()"></div>
+        <div class="kps-tabs">
+          <div class="kps-tab active" id="kps-tab-pending" onclick="switchKpsTab('pending')">確認済（作伝待ち）<span class="kps-tab-count" id="kps-count-pending">0</span></div>
+          <div class="kps-tab" id="kps-tab-done" onclick="switchKpsTab('done')">完了済<span class="kps-tab-count" id="kps-count-done">0</span></div>
+        </div>
+        <div class="kps-task-list" id="kps-task-list">
+          <div class="empty-state" style="margin:16px 8px"><div class="empty-icon">📭</div>作伝待ちはありません</div>
+        </div>
+      </div>
+      <div class="kps-detail-pane" id="kps-detail-pane">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray-300);"><div style="font-size:28px;margin-bottom:10px;opacity:0.4;">←</div><div style="font-size:13px;">左のリストから作伝を選択してください</div></div>
+      </div>
+      <div class="kps-sidebar">
+        <div class="kps-sidebar-card"><div class="kps-db-badge"><div class="kps-db-dot"></div>在庫DB: Connected (API)</div></div>
+        <div class="kps-sidebar-card">
+          <div class="kps-sidebar-title">本日のTODO進捗</div>
+          <div class="kps-progress-label"><span>完了 <span id="kps-done-count">0</span> 件</span><span id="kps-progress-pct">0%</span></div>
+          <div class="kps-progress-track"><div class="kps-progress-fill" id="kps-progress-bar" style="width:0%"></div></div>
+          <div class="kps-progress-sub">本日完了: <span id="kps-total-done">145</span>件（累計）</div>
+        </div>
+        <div class="kps-sidebar-card" style="flex:1;overflow-y:auto;">
+          <div class="kps-sidebar-title">最近の処理ログ</div>
+          <div class="kps-log-list" id="kps-log-list">
+            <div class="kps-log-item"><div class="kps-log-dot"></div><div><div class="kps-log-book">新書 世界現代史</div><div class="kps-log-who">山田 健太 が作伝実行</div><div class="kps-log-time">14:10</div></div></div>
+            <div class="kps-log-item"><div class="kps-log-dot"></div><div><div class="kps-log-book">方舟（文庫）</div><div class="kps-log-who">鈴木 あかり が作伝実行</div><div class="kps-log-time">14:05</div></div></div>
+            <div class="kps-log-item"><div class="kps-log-dot orange"></div><div><div class="kps-log-book">科学的思考入門</div><div class="kps-log-who">田中 誠 が営業へ返信</div><div class="kps-log-time">13:50</div><div class="kps-log-note">"在庫切れのため次回重版で…"</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon">💬</div>
+  <div>
+    <div class="toast-from">K-Order Bot · Slack通知</div>
+    <div class="toast-msg" id="toast-msg"></div>
+    <span class="toast-link" onclick="showView('marketing')">▶ 判断画面へ</span>
+  </div>
+</div>
+
+<!-- MODAL (auto-approve) -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon" id="modal-icon">✅</div>
+    <div class="modal-title" id="modal-title">自動承認されました！</div>
+    <div class="modal-tag" id="modal-tag">⚡ マスタルール合致：ストレート自動処理</div>
+    <div class="modal-body" id="modal-body">定型注文として即座にKPSへ送信されました。</div>
+    <button class="modal-close" onclick="closeModal()">確認</button>
+  </div>
+</div>
+
+<!-- DRILLDOWN MODAL -->
+<div class="modal-overlay" id="drill-modal">
+  <div class="drill-modal">
+    <div class="drill-title" id="drill-title"></div>
+    <div class="drill-sub" id="drill-sub"></div>
+    <div id="drill-content"></div>
+    <button class="drill-close" onclick="closeDrill()">閉じる</button>
+  </div>
+</div>
+
+<script>
+// ===== SLACK NOTIFICATION SYSTEM =====
+let notifList = [];
+let notifUnread = 0;
+
+function pushNotif({ icon, from, msg, action, actionLabel, targetView }) {
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const id = `notif-${Date.now()}`;
+  notifList.unshift({ id, icon, from, msg, action, actionLabel, targetView, time, unread: true });
+  notifUnread++;
+  renderNotifDrawer();
+  // ベルをシェイク
+  const bell = document.querySelector('.notif-bell');
+  bell.style.animation = 'none';
+  setTimeout(() => { bell.style.animation = 'bellShake 0.4s ease'; }, 10);
+}
+
+function renderNotifDrawer() {
+  const badge = document.getElementById('notif-badge');
+  const list = document.getElementById('notif-list');
+  // バッジ
+  if (notifUnread > 0) {
+    badge.textContent = notifUnread > 9 ? '9+' : notifUnread;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+  // リスト
+  if (notifList.length === 0) {
+    list.innerHTML = '<div class="notif-empty">🔕 通知はありません</div>';
+    return;
+  }
+  list.innerHTML = notifList.map(n => `
+    <div class="notif-item ${n.unread ? 'unread' : ''}" id="${n.id}">
+      <div class="notif-item-icon">${n.icon}</div>
+      <div class="notif-item-body">
+        <div class="notif-item-from">${n.from}</div>
+        <div class="notif-item-msg">${n.msg}</div>
+        ${n.action ? `<a class="notif-item-action" onclick="handleNotifAction('${n.id}','${n.targetView||''}');${n.action}">${n.actionLabel||'確認する'} →</a>` : ''}
+        <div class="notif-item-time">${n.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function handleNotifAction(id, targetView) {
+  // 既読にする
+  const n = notifList.find(x => x.id === id);
+  if (n && n.unread) { n.unread = false; notifUnread = Math.max(0, notifUnread - 1); }
+  if (targetView) { showView(targetView); }
+  toggleNotifDrawer();
+  renderNotifDrawer();
+}
+
+function toggleNotifDrawer() {
+  const drawer = document.getElementById('notif-drawer');
+  drawer.classList.toggle('open');
+  // 開いたら既読にする
+  if (drawer.classList.contains('open')) {
+    notifList.forEach(n => { n.unread = false; });
+    notifUnread = 0;
+    renderNotifDrawer();
+  }
+}
+
+function clearAllNotifs() {
+  notifList = []; notifUnread = 0;
+  renderNotifDrawer();
+}
+
+// ドロワー外クリックで閉じる
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('notif-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('notif-drawer').classList.remove('open');
+  }
+});
+
+// ===== CONSTANTS =====
+const BOOK_PRICE = 1500;
+const TIME_PER_AUTO = 10;
+const KPS_MEMBERS = ['佐藤 美咲','田中 誠','山田 健太','鈴木 あかり','伊藤 拓也'];
+const KPS_LINES = {
+  '紀伊國屋書店 新宿本店': '日販C01 121110',
+  'ジュンク堂書店 池袋本店': 'トーハン 11R09 95223',
+  '丸善 丸の内本店': '日販 03-4567',
+};
+
+// ===== STATE =====
+const INITIAL_REPRINT = [{
+  id:'pubtex-001', type:'reprint',
+  isbn:'9784065XXXXXX（書籍B）', title:'書籍B（在庫切れ断念された書籍）',
+  reprintQty:3000, trustScore:87,
+  trend:[28,35,42,38,55,71,89], trendLabels:['7W前','6W','5W','4W','3W','2W','先週'],
+  posComment:'全国主要書店でPOS好調。特に関東圏で週次売上+34%を記録。在庫切れ店舗が増加傾向。複数営業からの断念ログも蓄積されており、早急な重版が推奨されます。',
+  stockRemain:0, stockWeeks:0,
+}];
+
+let state = {
+  marketingAlerts:[], reprintAlerts:[...INITIAL_REPRINT], kpsOrders:[],
+  kpi:{timeSaved:0,revenueRecovered:0},
+  selectedStamp:'未選択', deliveryType:'normal',
+  selectedAlertIndex:-1, selectedAlertType:null
+};
+
+let kpsState = { activeTab:'pending', selectedId:null, completedToday:145 };
+
+// ===== NAV =====
+function showView(name) {
+  ['intro','sales','marketing','kps'].forEach(v => {
+    document.getElementById(`view-${v}`).classList.toggle('active', v===name);
+    document.getElementById(`tab-${v}`).classList.toggle('active', v===name);
+  });
+  if(name==='marketing') renderMarketing();
+  if(name==='kps') renderKPS();
+  if(name==='sales') updateFlowHighlight('input');
+}
+
+// ===== SALES =====
+function lookupISBN() {
+  const isbn = document.getElementById('isbn-input').value.trim();
+  const preview = document.getElementById('book-preview');
+  const titleEl = document.getElementById('book-title');
+  const seriesEl = document.getElementById('book-series');
+  if(isbn === '9784065358542') {
+    titleEl.innerText = '方舟'; seriesEl.innerText = '講談社文庫'; preview.style.display='flex';
+  } else if(isbn && isbn.toLowerCase()!=='b') {
+    titleEl.innerText = isbn; seriesEl.innerText = '書籍情報取得中...'; preview.style.display='flex';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function cameraDemo() {
+  document.getElementById('isbn-input').value = '9784065358542';
+  lookupISBN();
+  showToast('📷 カメラで「方舟」を認識しました。');
+}
+
+function selectStamp(btn) {
+  document.querySelectorAll('.stamp-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.selectedStamp = btn.dataset.value;
+}
+
+function selectDelivery(type) {
+  state.deliveryType = type;
+  document.getElementById('opt-normal').classList.toggle('active', type==='normal');
+  document.getElementById('opt-direct').classList.toggle('active', type==='direct');
+  document.getElementById('delivery-date-group').style.display = type==='direct'?'block':'none';
+}
+
+function checkStock() {
+  const isbn = document.getElementById('isbn-input').value.trim();
+  const qty = parseInt(document.getElementById('qty-input').value)||50;
+  const store = document.getElementById('store-input').value;
+  updateFlowHighlight('check');
+  setTimeout(()=>{
+    if(isbn.toLowerCase()==='b') {
+      document.getElementById('alert-area').style.display='block';
+      document.getElementById('submit-btn').style.display='none';
+      document.getElementById('loss-log-btn').classList.remove('btn-hidden');
+      updateFlowHighlight('alert');
+      updateStepLabel(2,'Step 2：在庫不足を検知。断念ログを記録してマーケへ通知しましょう');
+    } else if(!isbn) {
+      alert('ISBNまたは書名を入力してください');
+      updateFlowHighlight('input');
+    } else {
+      updateFlowHighlight('auto');
+      const bookTitle = document.getElementById('book-title')?.innerText || isbn;
+      state.kpsOrders.push({
+        id:Date.now(), isbn, bookTitle, qty, store,
+        stamp:state.selectedStamp, type:'auto', done:false,
+        deliveryType:state.deliveryType,
+        deliveryDate:document.getElementById('delivery-date')?.value||'',
+        assignee:KPS_MEMBERS[Math.floor(Math.random()*KPS_MEMBERS.length)]
+      });
+      state.kpi.timeSaved += TIME_PER_AUTO;
+      updateKPI(); renderKPS();
+      showModal('✅','ストレート自動承認！','⚡ マスタルール合致：人手不要で即時処理',`「${bookTitle}」の注文が自動承認され、KPSへ送信されました。\n10分の作業時間が創出されました。`);
+
+      // Slack通知
+      pushNotif({
+        icon: '⚡',
+        from: 'K-Order Bot #auto-approval',
+        msg: `<strong>自動承認</strong>：${bookTitle}<br>📚 ${qty}冊 → ${store}<br>KPSへ即時送信しました`,
+        actionLabel: 'KPS実務画面で確認',
+        action: '',
+        targetView: 'kps'
+      });
+
+      resetSalesForm(); updateFlowHighlight('input');
+    }
+  },400);
+}
+
+function sendLossLog() {
+  const isbn = document.getElementById('isbn-input').value.trim()||'在庫不足の書籍';
+  const qty = parseInt(document.getElementById('qty-input').value)||50;
+  const store = document.getElementById('store-input').value;
+  const comment = document.getElementById('comment-input').value||'（コメントなし）';
+  state.marketingAlerts.push({id:Date.now(), isbn, qty, store, comment, stamp:state.selectedStamp});
+
+  // 断念ログの書籍で重版アラートのタイトル・ISBNを更新（同じ本がPubteXでも引っかかっているストーリー）
+  if(state.reprintAlerts.length > 0) {
+    state.reprintAlerts[0].title = isbn;
+    state.reprintAlerts[0].isbn = isbn;
+  }
+
+  showToast(`🚨 【機会損失アラート】\n${store} より ${qty}冊の断念ログを受信！\n理由：${state.selectedStamp}`);
+
+  // Slack通知ドロワーに追加
+  pushNotif({
+    icon: '🚨',
+    from: 'K-Order Bot #marketing-alert',
+    msg: `<strong>${store}</strong> より断念ログ受信<br>📖 ${isbn} × ${qty}冊<br>理由：${state.selectedStamp}`,
+    actionLabel: 'マーケ判断画面で確認',
+    action: '',
+    targetView: 'marketing'
+  });
+  renderMarketing();
+  resetSalesForm();
+  document.getElementById('alert-area').style.display='none';
+  document.getElementById('submit-btn').style.display='block';
+  document.getElementById('loss-log-btn').classList.add('btn-hidden');
+  updateFlowHighlight('input');
+  updateStepLabel(1,'Step 1：アラートが送信されました。マーケタブへ移動して確認できます');
+}
+
+// ===== MARKETING =====
+function renderMarketing() {
+  const list = document.getElementById('marketing-list');
+  const total = state.marketingAlerts.length + state.reprintAlerts.length;
+  document.getElementById('alert-count').innerText = total;
+  if(total===0){
+    list.innerHTML=`<div class="empty-state" style="margin:12px"><div class="empty-icon">🔔</div>現在アラートはありません</div>`;
+    document.getElementById('detail-panel').innerHTML=`<div class="empty-detail"><div style="font-size:28px;margin-bottom:10px;opacity:0.3;">←</div>左のリストから選択してください</div>`;
+    return;
+  }
+  let html='';
+  if(state.reprintAlerts.length>0){
+    html+=`<div class="alert-section-label">📡 PubteX API</div>`;
+    html+=state.reprintAlerts.map((a,i)=>`
+      <div class="alert-item reprint ${state.selectedAlertType==='reprint'&&state.selectedAlertIndex===i?'sel':''}" onclick="showReprintDetail(${i})">
+        <div class="alert-badge r">🔄 重版検討アラート（PubteX提供）</div>
+        <div class="alert-isbn">${a.title}</div>
+        <div class="alert-store">${a.isbn}</div>
+        <span class="alert-tag" style="color:var(--orange);border-color:#fed7aa;">推奨 ${a.reprintQty.toLocaleString()}部</span>
+        <span class="alert-tag" style="color:var(--orange);border-color:#fed7aa;margin-left:3px;">信頼度 ${a.trustScore}%</span>
+      </div>`).join('');
+  }
+  if(state.marketingAlerts.length>0){
+    html+=`<div class="alert-section-label">🚨 在庫不足</div>`;
+    html+=state.marketingAlerts.map((a,i)=>`
+      <div class="alert-item stock ${state.selectedAlertType==='stock'&&state.selectedAlertIndex===i?'sel':''}" onclick="showStockDetail(${i})">
+        <div class="alert-badge s">🚨 要判断（在庫不足）</div>
+        <div class="alert-isbn">${a.isbn}</div>
+        <div class="alert-store">🏢 ${a.store}</div>
+        <span class="alert-tag">🏷 ${a.stamp} / ${a.qty}冊</span>
+      </div>`).join('');
+  }
+  list.innerHTML=html;
+  if(state.selectedAlertType===null){
+    if(state.reprintAlerts.length>0) showReprintDetail(0);
+    else showStockDetail(0);
+  } else if(state.selectedAlertType==='reprint') showReprintDetail(state.selectedAlertIndex);
+  else showStockDetail(state.selectedAlertIndex);
+}
+
+function showReprintDetail(index) {
+  state.selectedAlertIndex=index; state.selectedAlertType='reprint';
+  document.querySelectorAll('.alert-item').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('.alert-item.reprint')[index]?.classList.add('sel');
+  const d=state.reprintAlerts[index]; if(!d)return;
+  const maxT=Math.max(...d.trend);
+  const bars=d.trend.map((v,i)=>`<div class="trend-bar ${i===d.trend.length-1?'hi':''}" style="height:${Math.round(v/maxT*100)}%"></div>`).join('');
+  const labels=d.trendLabels.map(l=>`<span>${l}</span>`).join('');
+  document.getElementById('detail-panel').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:13px;flex:1;">
+      <div class="detail-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+            <span style="background:var(--orange-bg);border:1px solid #fed7aa;color:var(--orange);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">🔄 重版検討アラート</span>
+          </div>
+          <div class="detail-title">${d.title}</div>
+          <div class="detail-sub">ISBN: ${d.isbn}</div>
+        </div>
+        <div class="qty-badge orange">在庫 ${d.stockRemain}部<br><span style="font-size:10px;font-weight:400;">残り約${d.stockWeeks}週分</span></div>
+      </div>
+      <div class="pubtex-bar">
+        <div class="pubtex-header">
+          <div class="pubtex-label">📡 PubteX 重版信頼スコア <span class="pubtex-api-badge">PubteX API (Mock)</span></div>
+          <div class="pubtex-score-value">${d.trustScore}<span style="font-size:13px;font-weight:400;color:var(--gray-400);">/100</span></div>
+        </div>
+        <div class="pubtex-track"><div class="pubtex-fill" style="width:${d.trustScore}%"></div></div>
+        <div class="pubtex-note">判定：<strong style="color:var(--orange);">重版強く推奨</strong>　全国POSデータ・返品率・SNS指数を統合分析</div>
+      </div>
+      <div class="drilldown-row">
+        <button class="drilldown-btn" onclick="openDrill('knext')">📊 K-next でさらに詳しく</button>
+        <button class="drilldown-btn orange" onclick="openDrill('pubtex')">📡 PubteX 詳細データ</button>
+      </div>
+      <div class="ai-box blue">
+        <div class="ai-box-title">📈 売上トレンド（直近7週）<span class="ai-chip">POS連動</span></div>
+        <div class="trend-chart">${bars}</div>
+        <div class="trend-label">${labels}</div>
+        <div style="margin-top:8px;font-size:11px;color:var(--gray-500);background:white;border:1px solid var(--gray-200);border-radius:7px;padding:9px;">${d.posComment}</div>
+      </div>
+      <div class="reprint-recommend">
+        <div><div class="rr-label">PubteX 推奨重版部数</div><div class="rr-val">${d.reprintQty.toLocaleString()} 部</div><div class="rr-sub">需要予測モデル v2.3 による算出</div></div>
+        <div style="font-size:36px;opacity:0.15;">📗</div>
+      </div>
+      <button class="approve-btn orange-btn" onclick="approveReprint(${index})">🔄 重版を承認・業務部へ起票</button>
+    </div>`;
+}
+
+function approveReprint(index) {
+  const d=state.reprintAlerts[index];
+  state.reprintAlerts.splice(index,1);
+  state.selectedAlertType=null; state.selectedAlertIndex=-1;
+  showToast(`📗 【重版起票】「${d.title}」の重版申請が業務部へ送信されました。`);
+  renderMarketing();
+}
+
+function showStockDetail(index) {
+  state.selectedAlertIndex=index; state.selectedAlertType='stock';
+  document.querySelectorAll('.alert-item').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('.alert-item.stock')[index]?.classList.add('sel');
+  const d=state.marketingAlerts[index]; if(!d)return;
+  const rec=Math.floor(d.qty*0.9);
+  document.getElementById('detail-panel').innerHTML=`
+    <div style="display:flex;flex-direction:column;height:100%;gap:13px;">
+      <div class="detail-header">
+        <div><div class="detail-sub">🏢 ${d.store}</div><div class="detail-title">${d.isbn}</div></div>
+        <div class="qty-badge">希望数: ${d.qty}冊</div>
+      </div>
+      <div class="drilldown-row">
+        <button class="drilldown-btn" onclick="openDrill('knext')">📊 K-next でさらに詳しく</button>
+        <button class="drilldown-btn orange" onclick="openDrill('pubtex')">📡 PubteX データ参照</button>
+      </div>
+      <div class="ai-grid">
+        <div class="ai-box blue">
+          <div class="ai-box-title">📊 K-next DB 宣伝施策データ <span class="ai-chip">連携</span></div>
+          <div class="ai-stat">参照施策</div><div class="ai-stat-val">同規模イベント × SNS連動施策</div>
+          <div class="ai-recommend"><span class="ai-recommend-label">平均消化率</span><span class="ai-recommend-val">92%</span></div>
+        </div>
+        <div class="ai-box">
+          <div class="ai-box-title">🤖 K-Order AI 分析（類似ケース）</div>
+          <div class="ai-stat">店舗消化ポテンシャル</div><div class="ai-stat-val">Sランク（平均消化率 92%）</div>
+          <div class="ai-stat" style="margin-top:8px;">「${d.stamp}」スタンプ実績</div><div class="ai-stat-val">類似3件すべて実売85%超え</div>
+          <div class="ai-recommend"><span class="ai-recommend-label">推奨出荷数</span><span class="ai-recommend-val">${rec} 冊</span></div>
+        </div>
+      </div>
+      <div class="context-box">
+        <div class="context-title">現場の文脈 (WHY?)</div>
+        <div class="stamp-display">${d.stamp}</div>
+        <div class="context-comment">現場コメント：「${d.comment}」</div>
+      </div>
+      <div style="margin-top:auto;">
+        <button class="approve-btn" onclick="approveToKPS(${index},${rec})">✔️ 推奨値（${rec}冊）で承認・KPS連携</button>
+      </div>
+    </div>`;
+}
+
+function approveToKPS(index, finalQty) {
+  const d=state.marketingAlerts[index];
+  const profit=Math.floor(finalQty*BOOK_PRICE*0.7*0.45);
+  state.kpi.revenueRecovered+=profit; updateKPI();
+  state.kpsOrders.push({
+    id:Date.now(), isbn:d.isbn, bookTitle:d.isbn, qty:finalQty, store:d.store,
+    stamp:d.stamp, type:'manual', done:false, comment:`マーケ承認済。理由[${d.stamp}]`,
+    deliveryType:'normal', deliveryDate:'',
+    assignee:KPS_MEMBERS[Math.floor(Math.random()*KPS_MEMBERS.length)]
+  });
+  state.marketingAlerts.splice(index,1);
+  state.selectedAlertIndex=-1; state.selectedAlertType=null;
+  showToast(`📦 【KPS通知】マーケ部から ${d.store} への新規出荷指示が届きました。`);
+  renderMarketing(); renderKPS(); showView('kps');
+}
+
+// drilldown
+function openDrill(type) {
+  const overlay=document.getElementById('drill-modal');
+  if(type==='knext'){
+    document.getElementById('drill-title').innerText='K-next DB：宣伝施策データ詳細';
+    document.getElementById('drill-sub').innerText='K-nextシステムから取得した宣伝・施策連動データ';
+    document.getElementById('drill-content').innerHTML=`
+      <div class="drill-row"><span class="drill-key">施策タイプ</span><span class="drill-val">著者イベント × SNS連動</span></div>
+      <div class="drill-row"><span class="drill-key">対象イベント日</span><span class="drill-val">2026/03/15（サイン会）</span></div>
+      <div class="drill-row"><span class="drill-key">SNSリーチ数</span><span class="drill-val">約 284,000 人</span></div>
+      <div class="drill-row"><span class="drill-key">同規模施策 平均消化率</span><span class="drill-val" style="color:var(--blue);font-size:16px;">92%</span></div>
+      <div class="drill-row"><span class="drill-key">類似施策実績</span><span class="drill-val">3件中3件 実売85%超え</span></div>
+      <div class="drill-row"><span class="drill-key">データ取得日時</span><span class="drill-val">2026/03/07 09:12</span></div>`;
+  } else {
+    document.getElementById('drill-title').innerText='PubteX：需要予測詳細データ';
+    document.getElementById('drill-sub').innerText='PubteX APIから取得した定量分析データ（Mock）';
+    document.getElementById('drill-content').innerHTML=`
+      <div class="drill-row"><span class="drill-key">重版信頼スコア</span><span class="drill-val" style="color:var(--orange);font-size:16px;">87 / 100</span></div>
+      <div class="drill-row"><span class="drill-key">全国POS前週比</span><span class="drill-val">+34%（関東圏集中）</span></div>
+      <div class="drill-row"><span class="drill-key">在庫切れ書店数</span><span class="drill-val">23店舗（先週比 +9）</span></div>
+      <div class="drill-row"><span class="drill-key">推奨重版部数</span><span class="drill-val" style="color:var(--orange);font-size:16px;">3,000 部</span></div>
+      <div class="drill-row"><span class="drill-key">予測モデルバージョン</span><span class="drill-val">v2.3（RFID連動）</span></div>
+      <div class="drill-row"><span class="drill-key">データ取得日時</span><span class="drill-val">2026/03/07 08:45</span></div>`;
+  }
+  overlay.classList.add('show');
+}
+function closeDrill(){document.getElementById('drill-modal').classList.remove('show');}
+
+// ===== KPS =====
+function switchKpsTab(tab){
+  kpsState.activeTab=tab; kpsState.selectedId=null;
+  document.getElementById('kps-tab-pending').classList.toggle('active',tab==='pending');
+  document.getElementById('kps-tab-done').classList.toggle('active',tab==='done');
+  renderKPS();
+}
+
+function renderKPS(){
+  const query=(document.getElementById('kps-search-input')?.value||'').toLowerCase();
+  const pending=state.kpsOrders.filter(o=>!o.done);
+  const done=state.kpsOrders.filter(o=>o.done);
+  document.getElementById('kps-count-pending').innerText=pending.length;
+  document.getElementById('kps-count-done').innerText=done.length;
+  const pct=state.kpsOrders.length>0?Math.round(done.length/state.kpsOrders.length*100):0;
+  document.getElementById('kps-progress-bar').style.width=pct+'%';
+  document.getElementById('kps-progress-pct').innerText=pct+'%';
+  document.getElementById('kps-done-count').innerText=done.length;
+  document.getElementById('kps-total-done').innerText=kpsState.completedToday+done.length;
+  const source=kpsState.activeTab==='pending'?pending:done;
+  const filtered=query?source.filter(o=>(o.isbn||'').toLowerCase().includes(query)||(o.store||'').toLowerCase().includes(query)||(o.assignee||'').includes(query)):source;
+  const list=document.getElementById('kps-task-list');
+  if(filtered.length===0){
+    list.innerHTML=`<div class="empty-state" style="margin:16px 8px"><div class="empty-icon">${kpsState.activeTab==='done'?'✅':'📭'}</div>${kpsState.activeTab==='done'?'まだ完了した作伝はありません':'作伝待ちはありません'}</div>`;
+    document.getElementById('kps-detail-pane').innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray-300);"><div style="font-size:28px;margin-bottom:10px;opacity:0.4;">←</div><div style="font-size:13px;">左のリストから作伝を選択してください</div></div>`;
+    return;
+  }
+  list.innerHTML=filtered.map(o=>{
+    const idx=state.kpsOrders.indexOf(o);
+    const isActive=kpsState.selectedId===o.id;
+    const urg=o.done?{cls:'urg-done',label:'✔ 処理完了',dl:''}
+      :o.type==='auto'?{cls:'urg-green',label:'確認済：通常出荷',dl:'締切まで 45分'}
+      :{cls:'urg-orange',label:'確認済：マーケ承認',dl:'締切まで 2時間'};
+    return `<div class="kps-task-item ${isActive?'active':''} ${o.done?'done-item':''}" onclick="showKpsDetail(${idx})">
+      <div class="kps-task-urgency"><span class="${urg.cls}">${urg.label}</span><span style="font-size:9px;color:var(--gray-400);">${urg.dl}</span></div>
+      <div class="kps-task-title">${o.bookTitle||o.isbn}</div>
+      <div class="kps-task-sub">${o.store}${o.assignee?' · '+o.assignee:''}</div>
+    </div>`;
+  }).join('');
+  if(kpsState.selectedId){
+    const idx=state.kpsOrders.findIndex(o=>o.id===kpsState.selectedId);
+    if(idx>=0) showKpsDetail(idx); else if(filtered.length>0) showKpsDetail(state.kpsOrders.indexOf(filtered[0]));
+  } else if(filtered.length>0) showKpsDetail(state.kpsOrders.indexOf(filtered[0]));
+}
+
+function showKpsDetail(idx){
+  const o=state.kpsOrders[idx]; if(!o)return;
+  kpsState.selectedId=o.id;
+  document.querySelectorAll('.kps-task-item').forEach(el=>el.classList.remove('active'));
+  const source=kpsState.activeTab==='pending'?state.kpsOrders.filter(x=>!x.done):state.kpsOrders.filter(x=>x.done);
+  const vi=source.indexOf(o);
+  document.querySelectorAll('.kps-task-item')[vi]?.classList.add('active');
+  const isAuto=o.type==='auto';
+  const lineInfo=KPS_LINES[o.store]||'日販 03-4567';
+  const prodCode=String(500000+(idx*41237)%99999);
+  const seriesName=isAuto?'講談社タイガ':'講談社文庫';
+  const delivLabel=o.deliveryType==='direct'?`直送（${o.deliveryDate||'日程調整中'}）`:'通常納品（翌営業日）';
+  const instBody=isAuto
+    ?`マスタルール合致のため<strong>「通常出荷」</strong>で手配してください。<div class="kps-instruction-note">※在庫確認済み・即日出荷可能</div>`
+    :`マーケ承認済。<strong>「通常出荷」</strong>で即日手配してください。<div class="kps-instruction-note">理由スタンプ：${o.stamp||'通常補充'}</div>`;
+  const doneDisabled=o.done?'disabled':'';
+  const doneLabel=o.done?'✔ 作伝完了済み':'📋 作伝（出荷データ送信）';
+  document.getElementById('kps-detail-pane').innerHTML=`
+    <div class="kps-detail-isbn">
+      ISBN: ${o.isbn}
+      <span style="background:${isAuto?'#f0fdf4':'#eff6ff'};border:1px solid ${isAuto?'#bbf7d0':'#bfdbfe'};color:${isAuto?'var(--green)':'var(--blue)'};font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;">${isAuto?'⚡ 自動承認':'🧑‍💻 マーケ承認'}</span>
+    </div>
+    <div class="kps-detail-title">${o.bookTitle||o.isbn}</div>
+    <div class="kps-meta-grid">
+      <div class="kps-meta-label">製品コード</div><div class="kps-meta-value">${prodCode}</div>
+      <div class="kps-meta-label">シリーズ</div><div class="kps-meta-value">${seriesName}</div>
+      <div class="kps-meta-label">担当者</div><div class="kps-meta-value">${o.assignee||'未割当'}</div>
+      <div class="kps-meta-label">出荷先</div><div class="kps-meta-value">${o.store}</div>
+      <div class="kps-meta-label">数量</div><div class="kps-meta-value" style="color:var(--blue);font-weight:800;">${o.qty} 冊</div>
+      <div class="kps-meta-label">番線</div><div class="kps-meta-value">${lineInfo}</div>
+      <div class="kps-meta-label">納品方法</div><div class="kps-meta-value">${delivLabel}</div>
+    </div>
+    <div class="kps-instruction-box">
+      <div class="kps-instruction-title">ℹ️ 指示事項</div>
+      <div class="kps-instruction-body">${instBody}</div>
+    </div>
+    <div class="kps-action-area">
+      <button class="kps-btn-primary" onclick="completeOrder(${idx})" ${doneDisabled}>${doneLabel}</button>
+      <div class="kps-btn-row">
+        <button class="kps-btn-secondary" onclick="emailSales(${idx})">✉ 営業へメール返信</button>
+        <button class="kps-btn-secondary" onclick="holdOrder()">⏸ 保留に戻す</button>
+      </div>
+    </div>`;
+}
+
+function completeOrder(idx){
+  const o=state.kpsOrders[idx]; if(o.done)return; o.done=true;
+  const member=o.assignee||KPS_MEMBERS[idx%KPS_MEMBERS.length];
+  const now=new Date(); const t=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  addKpsLog(o.bookTitle||o.isbn, `${member} が作伝実行`, t, 'green');
+
+  // 出荷日を確定（翌営業日を計算）
+  const shipDate = calcNextBusinessDay();
+  o.shipDate = shipDate;
+  o.shipTime = t;
+  o.shipMember = member;
+
+  // 営業画面に通知を表示
+  pushShipmentNotify(o);
+
+  kpsState.completedToday++; renderKPS();
+}
+
+function calcNextBusinessDay() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1);
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function pushShipmentNotify(o) {
+  const area = document.getElementById('shipment-notify-area');
+  if(!area) return;
+  const notifyId = `notify-${o.id}`;
+  const div = document.createElement('div');
+  div.className = 'shipment-notify';
+  div.id = notifyId;
+  div.innerHTML = `
+    <div class="shipment-notify-header">
+      <span class="shipment-notify-badge">📦 出荷確定</span>
+      <span class="shipment-notify-title">KPSより出荷日が確定しました</span>
+      <button class="shipment-notify-close" onclick="document.getElementById('${notifyId}').remove()" title="閉じる">✕</button>
+    </div>
+    <div class="shipment-notify-row">
+      <span class="shipment-notify-key">書籍</span>
+      <span class="shipment-notify-val">${o.bookTitle||o.isbn}</span>
+    </div>
+    <div class="shipment-notify-row">
+      <span class="shipment-notify-key">納品先</span>
+      <span class="shipment-notify-val">${o.store}</span>
+    </div>
+    <div class="shipment-notify-row">
+      <span class="shipment-notify-key">出荷数</span>
+      <span class="shipment-notify-val">${o.qty} 冊</span>
+    </div>
+    <div class="shipment-notify-row">
+      <span class="shipment-notify-key">搬入予定日</span>
+      <span class="shipment-notify-val highlight">📅 ${o.shipDate}</span>
+    </div>
+    <div class="shipment-notify-row">
+      <span class="shipment-notify-key">処理担当 / 確定時刻</span>
+      <span class="shipment-notify-val">${o.shipMember} / ${o.shipTime}</span>
+    </div>
+    <button class="shipment-notify-mail-btn" id="mailbtn-${o.id}" onclick="sendShipmentMail('${o.id}', '${(o.bookTitle||o.isbn).replace(/'/g,"\\'")}', '${o.store}', '${o.shipDate}')">
+      ✉️ 書店担当者へ搬入日をメール通知
+    </button>`;
+  area.appendChild(div);
+
+  // 注文リストを更新
+  renderOrderHistory();
+
+  showToast(`📦 【出荷確定】${o.bookTitle||o.isbn}\n搬入予定日：${o.shipDate}`);
+
+  // Slack通知ドロワーに追加
+  pushNotif({
+    icon: '📦',
+    from: 'K-Order Bot #kps-shipment',
+    msg: `<strong>出荷確定</strong>：${o.bookTitle||o.isbn}<br>📅 搬入予定日：<strong>${o.shipDate}</strong><br>納品先：${o.store}`,
+    actionLabel: '営業画面で確認',
+    action: '',
+    targetView: 'sales'
+  });
+}
+
+function sendShipmentMail(orderId, bookTitle, store, shipDate) {
+  const btn = document.getElementById(`mailbtn-${orderId}`);
+  if(!btn || btn.classList.contains('sent')) return;
+  btn.classList.add('sent');
+  btn.innerText = '✅ メール送信済み';
+  showToast(`✉️ ${store} の担当者へ\n「${bookTitle}」搬入予定日（${shipDate}）をメール送信しました。`);
+}
+
+function renderOrderHistory() {
+  const area = document.getElementById('order-history-area');
+  if(!area || state.kpsOrders.length === 0) return;
+
+  const items = state.kpsOrders.map(o => {
+    const isShipped = o.done;
+    const statusClass = isShipped ? 'shipped' : 'pending';
+    const tagClass = isShipped ? 'shipped' : 'auto';
+    const tagLabel = isShipped ? `📅 ${o.shipDate||'確定中'}` : '⚡ 自動承認';
+    return `
+      <div class="order-history-item">
+        <div class="order-history-status ${statusClass}"></div>
+        <div class="order-history-book">${o.bookTitle||o.isbn}</div>
+        <div class="order-history-qty">${o.qty}冊</div>
+        <span class="order-history-tag ${tagClass}">${tagLabel}</span>
+      </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="order-history">
+      <div class="order-history-title">
+        本日の注文リスト
+        <span class="order-history-badge">${state.kpsOrders.length}件</span>
+      </div>
+      ${items}
+    </div>`;
+}
+function emailSales(idx){
+  const o=state.kpsOrders[idx];
+  const member=o.assignee||KPS_MEMBERS[idx%KPS_MEMBERS.length];
+  const now=new Date(); const t=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  addKpsLog(o.bookTitle||o.isbn, `${member} が営業へ返信`, t, 'orange');
+  showToast('✉️ 営業担当へメールを送信しました。');
+}
+function holdOrder(){ showToast('⏸ 保留リストに移動しました。'); }
+
+function addKpsLog(book, who, time, color){
+  const logList=document.getElementById('kps-log-list'); if(!logList)return;
+  const dot=color==='orange'?'orange':color==='blue'?'blue':'';
+  const item=document.createElement('div'); item.className='kps-log-item';
+  item.innerHTML=`<div class="kps-log-dot ${dot}"></div><div><div class="kps-log-book">${book}</div><div class="kps-log-who">${who}</div><div class="kps-log-time">${time}</div></div>`;
+  logList.insertBefore(item,logList.firstChild);
+}
+
+// ===== HELPERS =====
+function updateKPI(){
+  document.getElementById('kpi-time').innerText=state.kpi.timeSaved;
+  document.getElementById('kpi-revenue').innerText=state.kpi.revenueRecovered.toLocaleString();
+}
+function updateFlowHighlight(step){
+  ['input','check','auto','alert'].forEach(s=>{
+    const el=document.getElementById(`flow-${s}`); if(!el)return;
+    el.classList.remove('highlight','success-step','alert-step');
+  });
+  const t=document.getElementById(`flow-${step}`); if(!t)return;
+  if(step==='auto')t.classList.add('success-step');
+  else if(step==='alert')t.classList.add('alert-step');
+  else t.classList.add('highlight');
+}
+function updateStepLabel(step,label){
+  ['step1','step2','step3'].forEach((id,i)=>{
+    const el=document.getElementById(id); if(!el)return;
+    el.classList.remove('active','done');
+    if(i<step-1)el.classList.add('done');
+    else if(i===step-1)el.classList.add('active');
+  });
+  const el=document.getElementById('step-label'); if(el)el.innerHTML=label;
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').innerText=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),6000);
+}
+function showModal(icon,title,tag,body){
+  document.getElementById('modal-icon').innerText=icon;
+  document.getElementById('modal-title').innerText=title;
+  document.getElementById('modal-tag').innerText=tag;
+  document.getElementById('modal-body').innerText=body;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function resetSalesForm(){
+  document.getElementById('isbn-input').value='';
+  document.getElementById('comment-input').value='';
+  document.querySelectorAll('.stamp-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('book-preview').style.display='none';
+  document.getElementById('shipment-notify-area').innerHTML='';
+  // 注文リストは残す（複数書目が一覧で見えるように）
+  renderOrderHistory();
+  state.selectedStamp='未選択';
+  updateStepLabel(1,'Step 1：営業スタッフがスマホで注文を入力します');
+}
+</script>
+</body>
+</html>
